@@ -24,9 +24,10 @@ const distance = p1 => p2 => Math.hypot(p2.x-p1.x, p2.y-p1.y);
 const between = x => a => b => x >= a && x <= b;
 const setWithin = x => a => b => Math.max(Math.min(x, b), a);
 
-const gravity = 9.81;
+const gravity = 0;
 const frictionCoefficient = 0.8;
-const elasticity = 0.9;
+const elasticity = 0.5;
+const radius = 20;
 
 const Ball = function (x, y, color) {
     this.x = x;
@@ -42,33 +43,38 @@ Ball.physics = function (ball) {
     ball.x += ball.xv;
     ball.y += ball.yv;
     balls.forEach(ballB => {
-        if (distance(ball)(ballB) <= 20 && distance(ball)(ballB) > 0) {
+        if (distance(ball)(ballB) <= 2*radius && distance(ball)(ballB) > 0) {
+            let direction = Math.atan2(ballB.x-ball.x, ballB.y-ball.y);
+            while (distance(ball)(ballB) <= 2*radius) {
+                ball.x -= Math.sin(direction);
+                ball.y -= Math.cos(direction);
+            };
             let midpoint = {x: (ball.x + ballB.x)/2, y: (ball.y + ballB.y)/2};
             let v = Math.hypot(ball.xv, ball.yv);
             let vb = Math.hypot(ballB.xv, ballB.yv);
             let velocity = (v + vb) * elasticity / 2;
-            if (between(ballB.x)(10)(width-10)) {
-                
-            };
             let deflect = ball => {
                 let direction = Math.atan2(ball.x-midpoint.x, ball.y-midpoint.y);
                 ball.xv = Math.cos(direction)*velocity/2;
                 ball.yv = Math.sin(direction)*velocity/2;
+                ball.x += ball.xv;
+                ball.y += ball.yv;
             };
             deflect(ball);
             deflect(ballB);
+            console.log(v, vb, velocity);
         };
     });
-    if (!between(ball.x)(10)(width-10)) {
-        ball.x = setWithin(ball.x)(10)(width-10);
-        ball.xv = -ball.xv/2;
+    if (!between(ball.x)(radius)(width-radius)) {
+        ball.x = setWithin(ball.x)(radius)(width-radius);
+        ball.xv = -ball.xv*elasticity;
     };
-    if (ball.y >= height - 10) {
+    if (ball.y >= height - radius) {
         ball.xv -= Math.sign(ball.xv)*(1-frictionCoefficient);
     };
-    if (!between(ball.y)(10)(height-10)) {
-        ball.y = setWithin(ball.y)(10)(height-10);
-        ball.yv = -ball.yv/2;
+    if (!between(ball.y)(radius)(height-radius)) {
+        ball.y = setWithin(ball.y)(radius)(height-radius);
+        ball.yv = -ball.yv*elasticity;
     };
 };
 Ball.update = function (ball) {
@@ -76,7 +82,7 @@ Ball.update = function (ball) {
     let {x, y, color} = ball;
     ctx.fillStyle = color;
     ctx.beginPath();
-        ctx.arc(x, y, 10, 0, 2*Math.PI);
+        ctx.arc(x, y, radius, 0, 2*Math.PI);
     ctx.fill();
 };
 
@@ -85,6 +91,8 @@ var selectedBall = null;
 
 new Ball(100, 100, "red");
 new Ball(200, 100, "blue");
+new Ball(300, 100, "green");
+new Ball(400, 100, "yellow");
 
 let mouse = {x: 0, y: 0, xv: 0, yv: 0};
 const mouseUpdate = e => {
@@ -97,7 +105,7 @@ canvas.addEventListener("mousemove", mouseUpdate);
 
 const selectBall = e => {
     balls.forEach(ball => {
-        if (distance(ball)(mouse) <= 30) selectedBall = ball;
+        if (distance(ball)(mouse) <= 2*radius + 10) selectedBall = ball;
     });
     if (selectedBall) selectedBall.dragged = true;
 };
@@ -116,8 +124,8 @@ const mainloop  = () => {
     ctx.strokeRect(0, 0, width, height);
     balls.forEach(Ball.update);
     if (selectedBall) {
-        selectedBall.x = mouse.x - 20;
-        selectedBall.y = mouse.y - 5;
+        selectedBall.x = mouse.x - radius;
+        selectedBall.y = mouse.y - radius/2;
     };
     requestAnimationFrame(mainloop);
 };
