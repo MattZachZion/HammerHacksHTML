@@ -15,7 +15,7 @@
 const canvas    = document.getElementById("canvas");
 const ctx       = canvas.getContext("2d");
 const width     = screen.availWidth - 50;
-const height    = screen.availHeight - 150;
+const height    = screen.availHeight - 250;
 
 canvas.width    = width;
 canvas.height   = height;
@@ -23,6 +23,10 @@ canvas.height   = height;
 const distance = p1 => p2 => Math.hypot(p2.x-p1.x, p2.y-p1.y);
 const between = x => a => b => x >= a && x <= b;
 const setWithin = x => a => b => Math.max(Math.min(x, b), a);
+
+const gravity = 9.81;
+const frictionCoefficient = 0.8;
+const elasticity = 0.9;
 
 const Ball = function (x, y, color) {
     this.x = x;
@@ -34,15 +38,33 @@ const Ball = function (x, y, color) {
     balls.push(this);
 };
 Ball.physics = function (ball) {
-    ball.yv += 0.981;
+    ball.yv += gravity/10;
     ball.x += ball.xv;
     ball.y += ball.yv;
+    balls.forEach(ballB => {
+        if (distance(ball)(ballB) <= 20 && distance(ball)(ballB) > 0) {
+            let midpoint = {x: (ball.x + ballB.x)/2, y: (ball.y + ballB.y)/2};
+            let v = Math.hypot(ball.xv, ball.yv);
+            let vb = Math.hypot(ballB.xv, ballB.yv);
+            let velocity = (v + vb) * elasticity / 2;
+            if (between(ballB.x)(10)(width-10)) {
+                
+            };
+            let deflect = ball => {
+                let direction = Math.atan2(ball.x-midpoint.x, ball.y-midpoint.y);
+                ball.xv = Math.cos(direction)*velocity/2;
+                ball.yv = Math.sin(direction)*velocity/2;
+            };
+            deflect(ball);
+            deflect(ballB);
+        };
+    });
     if (!between(ball.x)(10)(width-10)) {
         ball.x = setWithin(ball.x)(10)(width-10);
         ball.xv = -ball.xv/2;
     };
     if (ball.y >= height - 10) {
-        ball.xv -= Math.sign(ball.xv)*0.2;
+        ball.xv -= Math.sign(ball.xv)*(1-frictionCoefficient);
     };
     if (!between(ball.y)(10)(height-10)) {
         ball.y = setWithin(ball.y)(10)(height-10);
@@ -62,6 +84,7 @@ const balls = [];
 var selectedBall = null;
 
 new Ball(100, 100, "red");
+new Ball(200, 100, "blue");
 
 let mouse = {x: 0, y: 0, xv: 0, yv: 0};
 const mouseUpdate = e => {
@@ -70,13 +93,13 @@ const mouseUpdate = e => {
     mouse.x = e.clientX;
     mouse.y = e.clientY;
 };
-document.addEventListener("mousemove", mouseUpdate);
+canvas.addEventListener("mousemove", mouseUpdate);
 
 const selectBall = e => {
     balls.forEach(ball => {
         if (distance(ball)(mouse) <= 30) selectedBall = ball;
-        ball.dragged = true;
     });
+    if (selectedBall) selectedBall.dragged = true;
 };
 const deselectBall = e => {
     if (!selectedBall) return;
@@ -85,15 +108,15 @@ const deselectBall = e => {
     selectedBall.yv = mouse.yv;
     selectedBall = null;
 };
-document.addEventListener("mousedown", selectBall);
-document.addEventListener("mouseup", deselectBall);
+canvas.addEventListener("mousedown", selectBall);
+canvas.addEventListener("mouseup", deselectBall);
 
 const mainloop  = () => {
     ctx.clearRect(0, 0, width, height);
     ctx.strokeRect(0, 0, width, height);
     balls.forEach(Ball.update);
     if (selectedBall) {
-        selectedBall.x = mouse.x - 5;
+        selectedBall.x = mouse.x - 20;
         selectedBall.y = mouse.y - 5;
     };
     requestAnimationFrame(mainloop);
