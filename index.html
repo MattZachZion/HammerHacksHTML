@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Bouncing Ball</title>
+        <meta charset="UTF-8">
+    </head>
+
+    <body>
+        <canvas id="canvas"></canvas>
+    </body>
+
+    <script>
+
+const canvas    = document.getElementById("canvas");
+const ctx       = canvas.getContext("2d");
+const width     = screen.availWidth - 100;
+const height    = screen.availHeight - 100;
+
+canvas.width    = width;
+canvas.height   = height;
+
+const Ball = (x, y, color) => {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.xv = 0;
+    this.yv = 0;
+};
+Ball.update = function (ball) {
+
+};
+
+const balls = [];
+
+const mainloop  = () => {
+    ctx.clearRect(0, 0, width, height);
+    ctx.strokeRect(0, 0, width, height);
+    balls.forEach(update);
+    requestAnimationFrame(mainloop);
+};
+
+requestAnimationFrame(mainloop);
+
+    </script>
+</html>
